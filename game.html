@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кибер-Викторина: Интеллект</title>
+    <style>
+        :root {
+            --bg: #090d16;
+            --panel: #131b2e;
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.3);
+            --success: #22c55e;
+            --danger: #f43f5e;
+            --text: #f8fafc;
+            --muted: #64748b;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--panel);
+            border: 2px solid rgba(56, 189, 248, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            padding: 30px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 480px;
+            position: relative;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--accent), #818cf8);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .header-info span {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        h2.question-title {
+            font-size: 1.3rem;
+            margin-top: 0;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .option-btn {
+            background: #070a12;
+            border: 2px solid #1e293b;
+            color: var(--text);
+            padding: 14px 18px;
+            border-radius: 12px;
+            font-size: 1rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            background: rgba(56, 189, 248, 0.05);
+        }
+
+        .option-btn.correct {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: var(--success);
+            color: #4ade80;
+        }
+
+        .option-btn.wrong {
+            background: rgba(244, 63, 94, 0.15);
+            border-color: var(--danger);
+            color: #fb7185;
+        }
+
+        .next-btn {
+            background: var(--accent);
+            color: #070a12;
+            border: none;
+            width: 100%;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: opacity 0.2s, transform 0.1s;
+            display: none;
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        .next-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* Экран результатов */
+        .result-screen {
+            display: none;
+            text-align: center;
+        }
+
+        .result-screen h1 {
+            color: var(--accent);
+            margin-top: 0;
+            font-size: 2rem;
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .score-badge {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--success);
+            margin: 20px 0;
+        }
+
+        .result-stats {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 25px;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 0.95rem;
+        }
+
+        .result-stats div {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .result-stats span {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, var(--accent), #2563eb);
+            color: #070a12;
+            border: none;
+            width: 100%;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 800;
+            border-radius: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Блок викторины -->
+        <div id="quizContainer">
+            <div class="header-info">
+                <div>Вопрос <span id="currentQuestionNum">1</span> из <span id="totalQuestionsNum">5</span></div>
+                <div>Счет: <span id="currentScore">0</span></div>
+            </div>
+
+            <h2 class="question-title" id="questionText">Загрузка вопроса...</h2>
+
+            <div class="options-list" id="optionsContainer">
+                <!-- Варианты генерируются через JS -->
+            </div>
+
+            <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Следующий вопрос</button>
+        </div>
+
+        <!-- Экран выдачи результата -->
+        <div class="result-screen" id="resultScreen">
+            <h1>Викторина завершена!</h1>
+            <p>Вы успешно прошли все тестовые вопросы.</p>
+            
+            <div class="score-badge" id="finalScoreText">4/5</div>
+
+            <div class="result-stats">
+                <div>Правильных ответов: <span id="resCorrect">4</span></div>
+                <div>Ошибок: <span id="resWrong">1</span></div>
+                <div>Успешность: <span id="resPercent">80%</span></div>
+            </div>
+
+            <button class="restart-btn" onclick="startQuiz()">Пройти заново</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "Какая планета Солнечной системы находится ближе всего к Солнцу?",
+                options: ["Венера", "Меркурий", "Марс", "Земля"],
+                answer: 1
+            },
+            {
+                question: "Какой язык программирования используется для создания интерактивности на веб-страницах (в браузере)?",
+                options: ["Python", "C++", "JavaScript", "Java"],
+                answer: 2
+            },
+            {
+                question: "Сколько костей в теле взрослого человека примерно?",
+                options: ["Около 206", "Около 150", "Около 300", "Около 450"],
+                answer: 0
+            },
+            {
+                question: "В каком году человек впервые ступил на поверхность Луны?",
+                options: ["1961", "1965", "1969", "1972"],
+                answer: 2
+            },
+            {
+                question: "Какая химическая формула у обычной питьевой воды?",
+                options: ["CO2", "H2O", "NaCl", "O3"],
+                answer: 1
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let wrongAnswers = 0;
+        let answered = false;
+
+        const quizContainer = document.getElementById('quizContainer');
+        const resultScreen = document.getElementById('resultScreen');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const currentQuestionNum = document.getElementById('currentQuestionNum');
+        const totalQuestionsNum = document.getElementById('totalQuestionsNum');
+        const currentScore = document.getElementById('currentScore');
+        const nextBtn = document.getElementById('nextBtn');
+
+        const resCorrect = document.getElementById('resCorrect');
+        const resWrong = document.getElementById('resWrong');
+        const resPercent = document.getElementById('resPercent');
+        const finalScoreText = document.getElementById('finalScoreText');
+
+        // Web Audio API синтезатор звуков без внешних файлов
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            let now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.05);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.linearRampToValueAtTime(0.001, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'correct') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0.001, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(110, now + 0.15);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.linearRampToValueAtTime(0.001, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'win') {
+                let notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, index) => {
+                    let o = audioCtx.createOscillator();
+                    let g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.frequency.setValueAtTime(freq, now + index * 0.1);
+                    g.gain.setValueAtTime(0.1, now + index * 0.1);
+                    g.gain.linearRampToValueAtTime(0.001, now + index * 0.1 + 0.15);
+                    o.start(now + index * 0.1);
+                    o.stop(now + index * 0.1 + 0.15);
+                });
+            }
+        }
+
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            wrongAnswers = 0;
+            quizContainer.style.display = 'block';
+            resultScreen.style.display = 'none';
+            totalQuestionsNum.textContent = questions.length;
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            answered = false;
+            nextBtn.style.display = 'none';
+            const q = questions[currentQuestionIndex];
+            
+            currentQuestionNum.textContent = currentQuestionIndex + 1;
+            currentScore.textContent = score;
+            questionText.textContent = q.question;
+            optionsContainer.innerHTML = '';
+
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = opt;
+                btn.onclick = () => selectOption(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function selectOption(selectedIndex, selectedBtn) {
+            if (answered) return;
+            answered = true;
+            playSound('click');
+
+            const q = questions[currentQuestionIndex];
+            const allButtons = optionsContainer.querySelectorAll('.option-btn');
+
+            allButtons.forEach(b => b.disabled = true);
+
+            if (selectedIndex === q.answer) {
+                playSound('correct');
+                selectedBtn.classList.add('correct');
+                score++;
+                currentScore.textContent = score;
+            } else {
+                playSound('wrong');
+                selectedBtn.classList.add('wrong');
+                allButtons[q.answer].classList.add('correct');
+                wrongAnswers++;
+            }
+
+            if (currentQuestionIndex < questions.length - 1) {
+                nextBtn.style.display = 'block';
+            } else {
+                setTimeout(showResults, 800);
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+
+        function showResults() {
+            playSound('win');
+            quizContainer.style.display = 'none';
+            resultScreen.style.display = 'block';
+
+            let percent = Math.round((score / questions.length) * 100);
+
+            finalScoreText.textContent = `${score} / ${questions.length}`;
+            resCorrect.textContent = score;
+            resWrong.textContent = wrongAnswers;
+            resPercent.textContent = `${percent}%`;
+        }
+
+        // Запуск при старте
+        startQuiz();
+    </script>
+</body>
+</html>
